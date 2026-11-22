@@ -20,7 +20,7 @@ Sales reps and Sales Ops regularly need to fix Opportunity Products after a deal
 | Logic | `OpportunityProductController` (Apex) | Loads line items with SOQL, saves only fields that really changed, and writes one audit row per changed field. Line items and audit rows are saved in one transaction: if either fails, both roll back. |
 | Data model | `Product_Correction_Log__c` | Audit object: Opportunity, product, field changed, old/new value, reason. Reportable. |
 | Data quality | Validation rules on `OpportunityLineItem` | Discount ≤ 50%, Quantity > 0. Rule errors are shown to the user as a toast. |
-| Security | `Product_Correction_Access` permission set | Object, field, tab and Apex access. All SOQL and DML run in **user mode**, so field-level security and sharing are enforced. |
+| Security | `Product_Correction_Access` permission set | Object, field, tab and Apex access, including the standard Opportunity Product `Discount` field, which is hidden by default in new orgs. All SOQL and DML run in **user mode**, so field-level security and sharing are enforced. |
 
 ```
 Opportunity record page
@@ -33,9 +33,14 @@ Opportunity record page
 
 ## Testing
 
-- **Apex**: `OpportunityProductControllerTest` covers loading, saving with audit rows, skipping unchanged values, required reason, and rollback when a validation rule fails.
+- **Apex**: 6 tests in `OpportunityProductControllerTest`, all passing, with **94% coverage** of `OpportunityProductController`. They cover loading, saving with audit rows, skipping unchanged values, the required reason, and rollback when a validation rule fails.
 - **LWC Jest**: 7 tests cover rendering, empty and error states, the reason check, converting edited cells to numbers, and success and error toasts.
 - **CI**: GitHub Actions runs ESLint and Jest on every push.
+
+## Platform details handled
+
+- Salesforce rejects an update that changes both Quantity and Discount unless Sales Price is also sent, because it can't work out the total otherwise. The controller always includes the current Sales Price when a line changes.
+- The Opportunity Product `Discount` field is hidden from all profiles in a new org. In user mode a hidden field causes a "No such column" error, so the permission set grants it explicitly.
 
 ## Setup
 

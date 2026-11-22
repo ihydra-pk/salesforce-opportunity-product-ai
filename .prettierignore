@@ -9,3 +9,5 @@
 .vscode
 
 coverage/
+# Keep hand-formatted Salesforce metadata as written
+**/*.xml

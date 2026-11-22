@@ -101,6 +101,11 @@ public with sharing class OpportunityProductController {
       }
       // Id is always populated, so more than one field means something changed.
       if (changed.getPopulatedFieldsAsMap().size() > 1) {
+        // Salesforce rejects changing Quantity and Discount together unless
+        // UnitPrice is also sent, so keep the current price when it wasn't edited.
+        if (!changed.getPopulatedFieldsAsMap().containsKey('UnitPrice')) {
+          changed.UnitPrice = original.UnitPrice;
+        }
         updates.add(changed);
       }
     }

@@ -1,32 +1,52 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <label>Product Correction Access</label>
-    <description
-  >Lets sales ops users correct Opportunity Products through the corrector component and view the audit log.</description>
+    <description>Lets sales ops users correct Opportunity Products through the corrector component and view the audit log.</description>
     <hasActivationRequired>false</hasActivationRequired>
-    <classAccesses><apexClass>OpportunityProductController</apexClass><enabled
-    >true</enabled></classAccesses>
-    <fieldPermissions><editable>true</editable><field
-    >Product_Correction_Log__c.Opportunity__c</field><readable
-    >true</readable></fieldPermissions>
-    <fieldPermissions><editable>true</editable><field
-    >Product_Correction_Log__c.Line_Item_Id__c</field><readable
-    >true</readable></fieldPermissions>
-    <fieldPermissions><editable>true</editable><field
-    >Product_Correction_Log__c.Product_Name__c</field><readable
-    >true</readable></fieldPermissions>
-    <fieldPermissions><editable>true</editable><field
-    >Product_Correction_Log__c.Field_Changed__c</field><readable
-    >true</readable></fieldPermissions>
-    <fieldPermissions><editable>true</editable><field
-    >Product_Correction_Log__c.Old_Value__c</field><readable
-    >true</readable></fieldPermissions>
-    <fieldPermissions><editable>true</editable><field
-    >Product_Correction_Log__c.New_Value__c</field><readable
-    >true</readable></fieldPermissions>
-    <fieldPermissions><editable>true</editable><field
-    >Product_Correction_Log__c.Reason__c</field><readable
-    >true</readable></fieldPermissions>
+    <classAccesses>
+        <apexClass>OpportunityProductController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>OpportunityLineItem.Discount</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Product_Correction_Log__c.Opportunity__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Product_Correction_Log__c.Line_Item_Id__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Product_Correction_Log__c.Product_Name__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Product_Correction_Log__c.Field_Changed__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Product_Correction_Log__c.Old_Value__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Product_Correction_Log__c.New_Value__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Product_Correction_Log__c.Reason__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <objectPermissions>
         <allowCreate>true</allowCreate>
         <allowDelete>false</allowDelete>
@@ -36,6 +56,8 @@
         <object>Product_Correction_Log__c</object>
         <viewAllRecords>true</viewAllRecords>
     </objectPermissions>
-    <tabSettings><tab>Product_Correction_Log__c</tab><visibility
-    >Visible</visibility></tabSettings>
+    <tabSettings>
+        <tab>Product_Correction_Log__c</tab>
+        <visibility>Visible</visibility>
+    </tabSettings>
 </PermissionSet>
