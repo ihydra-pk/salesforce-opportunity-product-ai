@@ -1,0 +1,41 @@
+<template>
+  <lightning-card
+    title="Correct Opportunity Products"
+    icon-name="standard:product"
+  >
+    <div class="slds-p-horizontal_medium">
+      <template lwc:if={error}>
+        <p class="slds-text-color_error" data-id="error">{error}</p>
+      </template>
+      <template lwc:elseif={hasRows}>
+        <lightning-input
+          data-id="reason"
+          label="Reason for correction"
+          value={reason}
+          max-length="255"
+          required
+          onchange={handleReasonChange}
+        ></lightning-input>
+        <div class="slds-m-top_small">
+          <lightning-datatable
+            key-field="Id"
+            data={rows}
+            columns={columns}
+            draft-values={draftValues}
+            hide-checkbox-column
+            onsave={handleSave}
+            oncancel={handleCancel}
+          ></lightning-datatable>
+        </div>
+      </template>
+      <template lwc:else>
+        <p data-id="empty">This opportunity has no products yet.</p>
+      </template>
+      <template lwc:if={isSaving}>
+        <lightning-spinner
+          alternative-text="Saving corrections"
+        ></lightning-spinner>
+      </template>
+    </div>
+  </lightning-card>
+</template>
