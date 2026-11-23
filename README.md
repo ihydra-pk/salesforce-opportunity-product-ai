@@ -1,132 +1,51 @@
-# Opportunity Product Corrector with AI Review
-
-A Salesforce app for **updating and correcting products on existing Opportunities**. Sales Ops can fix quantities, prices and discounts in one table. Every change needs a reason and is logged, and an **Einstein AI review** checks the products for pricing problems and suggests corrections.
+# Opportunity Product Corrector
 
 ![CI](https://github.com/ihydra-pk/salesforce-opportunity-product-ai/actions/workflows/ci.yml/badge.svg)
 
-Built with Lightning Web Components, Apex, SOQL, custom objects, validation rules, a permission set and an Agentforce Prompt Builder template. Deployed and tested in a Salesforce Developer Edition org.
+Fixing products on an Opportunity after the deal is created is a common Sales Ops chore: a wrong quantity, a renegotiated price, a discount in the wrong place. Salesforce lets you edit these values, but it doesn't record why they changed, and it doesn't tell you which lines look wrong in the first place.
 
-![Opportunity Product Corrector on an Opportunity record page](docs/images/01-corrector-on-opportunity.png)
+So I built a small tool for it. It sits on the Opportunity page, lets you correct quantity, price and discount in one table, asks for a reason, logs every change, and can ask Einstein AI to review the products for pricing problems.
 
-## The business problem
+**Stack:** LWC, Apex, SOQL, custom object, validation rules, permission set, Prompt Builder (Agentforce), Jest, GitHub Actions
 
-After a deal is created, its products often need correcting: a wrong quantity, a renegotiated price, or a discount entered in the wrong field. The standard "Edit Products" screen allows edits, but it doesn't:
+![The corrector on an Opportunity record page](docs/images/01-corrector-on-opportunity.png)
 
-- ask **why** a value was changed,
-- keep an **audit trail** that can be reported on,
-- stop out-of-policy discounts before they reach the forecast,
-- point out **which lines look wrong** in the first place.
+## How it works
 
-## What it does
+**Correcting products.** Edit the values inline and enter a reason. On save, Apex updates only the fields that actually changed and writes one log record per change (old value, new value, reason, who changed it). If anything fails, for example the validation rule blocking a discount over 50%, the whole save is rolled back and the user sees the rule's message.
 
-| | Feature | How |
+| Edit | Reason missing | Saved |
 |---|---|---|
-| ✏️ | Inline correction of Quantity, Sales Price and Discount | LWC `lightning-datatable` with inline edit on the Opportunity record page |
-| 📝 | Required reason for every correction | Checked in the component and again in Apex |
-| 🧾 | Audit log, one row per changed field (old value, new value, reason, user) | Custom object `Product_Correction_Log__c`, reportable |
-| 🛡️ | Business rules: discount ≤ 50%, quantity > 0 | Validation rules on `OpportunityLineItem`; the rule's message is shown to the user |
-| ↩️ | All or nothing: line items and log rows are saved together | Apex savepoint and rollback |
-| 🔐 | Respects the user's permissions | All SOQL and DML in **user mode**; access through the `Product_Correction_Access` permission set |
-| ✨ | **AI Review** of the product lines | Prompt Builder template grounded by Apex pricing rules, called from the LWC |
+| ![Inline edit](docs/images/02-inline-edit.png) | ![Reason required](docs/images/03-reason-required.png) | ![Saved](docs/images/04-corrections-saved.png) |
 
-### Inline edit, required reason, and save
+**AI Review.** I didn't want the AI to do the maths, so the work is split:
 
-| Editing sales prices | Reason is required | Saved |
-|---|---|---|
-| ![Inline edit](docs/images/02-inline-edit.png) | ![Reason required](docs/images/03-reason-required.png) | ![Corrections saved](docs/images/04-corrections-saved.png) |
+1. Apex checks each product against simple pricing rules: price above list, more than 30% below list, discount over 20%, large volume at full list price.
+2. A Prompt Builder template receives those findings and writes a short review with one suggested fix per problem. It's told not to invent numbers.
+3. The **AI Review** button in the component shows the answer.
 
-## AI Review: how the AI part works
+This is what it said about my demo opportunity after I raised the eSIM price to $22 (list price $12):
 
-The AI is used for **data analysis and decision support**, not for doing the calculations itself.
+> eSIM Connectivity Plan (ESIM-01): The sales price is 83% above the list price, which could lead to approval delays and revenue recognition issues. Please verify the sales price or consider applying a discount to align more closely with the list price.
 
-1. **Apex finds the facts.** `ProductHealthGrounding` reads the Opportunity's products and applies fixed pricing rules: price above list, price more than 30% below list, discount above 20%, and large volume at full list price.
-2. **The prompt template explains them.** `Opportunity_Product_Health_Review` (Prompt Builder, Flex template) gets these facts through Apex grounding. It asks the model for a short review with one concrete correction per flagged line, and forbids inventing numbers.
-3. **The LWC shows the result.** The **AI Review** button calls `ProductHealthAIController`, which runs the template through `ConnectApi.EinsteinLLM`.
-
-Because the calculations happen in Apex, the flags are tested and repeatable. The model only explains and prioritises them.
-
-Example output for the demo opportunity, after the eSIM sales price was changed to $22 against a $12 list price:
-
-> The product lines require review due to pricing inconsistencies that may impact revenue accuracy and approval processes.
->
-> - eSIM Connectivity Plan (ESIM-01): The sales price is 83% above the list price, which could lead to approval delays and revenue recognition issues. Please verify the sales price or consider applying a discount to align more closely with the list price.
-
-## Architecture
-
-```
-Opportunity record page
-└─ opportunityProductCorrector (LWC)
-   ├─ @wire getLineItems ─────────────► OpportunityProductController ── SOQL WITH USER_MODE
-   ├─ saveCorrections(drafts, reason) ► OpportunityProductController
-   │                                     ├─ update as user OpportunityLineItem ◄── validation rules
-   │                                     └─ insert as user Product_Correction_Log__c
-   └─ AI Review ──────────────────────► ProductHealthAIController
-                                         └─ Prompt template Opportunity_Product_Health_Review
-                                              └─ grounding: ProductHealthGrounding (pricing rules)
-```
+**Security.** All queries and saves run in user mode, so the tool only shows and changes what the user is allowed to. Access comes from one permission set.
 
 ## Testing
 
-| Layer | Tests | Result |
-|---|---|---|
-| Apex: `OpportunityProductControllerTest` | Load, save with audit rows, skip unchanged values, required reason, rollback on validation rule | 6 passing, **94%** coverage |
-| Apex: `ProductHealthTest` | Each pricing rule, grounding text, template input, AI error handling | 6 passing, **99%** grounding / **85%** AI controller |
-| LWC Jest | Rendering, empty and error states, reason check, number conversion, toasts, record refresh, AI review | 9 passing |
-| CI | GitHub Actions runs ESLint and Jest on every push | ✅ |
+- 12 Apex tests, with 85–99% coverage per class
+- 9 Jest tests for the component
+- ESLint and Jest run on every push through GitHub Actions
 
-Generative AI calls can't run inside Apex tests, so the controller skips only the one real AI call in tests. Building the template input and handling errors are still tested.
+Running the tests in a real org caught things I wouldn't have guessed:
 
-## Platform details found while testing in a real org
+- Salesforce won't let you change Quantity and Discount together unless you also send the Sales Price, so the code now always includes it.
+- The Discount field is hidden by default in a new org. In user mode that shows up as a confusing "No such column" error, so the permission set grants it.
+- The retired GPT-3.5 model in the sample templates can't be activated anymore, so the template uses GPT-4.1 mini.
 
-- **Quantity and Discount can't change together without Sales Price.** Salesforce rejects such an update because it can't work out the total. The controller always sends the current Sales Price when a line changes.
-- **The Opportunity Product `Discount` field is hidden in new orgs.** In user mode, a hidden field causes a "No such column" error, so the permission set grants it explicitly.
-- **Picklists sort in their defined order, not alphabetically.** Tests look up log rows by field name instead of by position.
-- **Prompt templates need an active model.** The retired GPT-3.5 default couldn't be activated, so the template uses `sfdc_ai__DefaultGPT41Mini`.
+## What's in the repo
 
-## Setup
-
-Needs a Developer Edition org with Einstein generative AI (Prompt Builder) enabled.
-
-```bash
-npm install
-
-sf org login web --alias my-org --set-default
-sf project deploy start --manifest manifest/package.xml --test-level RunLocalTests
-sf org assign permset --name Product_Correction_Access
-
-# Demo data: an IoT/eSIM opportunity with three products
-sf apex run --file scripts/apex/seed.apex
-```
-
-Then open the Opportunity, choose ⚙️ → **Edit Page**, drag **Opportunity Product Corrector** onto the page, and **Save** → **Activate**.
-
-## Commands
-
-| Task | Command |
-|---|---|
-| Run all Apex tests with coverage | `sf apex run test --test-level RunLocalTests --code-coverage --result-format human --wait 10` |
-| Run one Apex test method | `sf apex run test --tests OpportunityProductControllerTest.saveCorrectionsRequiresReason --result-format human --wait 10` |
-| Run LWC Jest tests | `npm run test:unit` |
-| Lint LWC | `npm run lint` |
-| Validate a deploy without saving | `sf project deploy validate --manifest manifest/package.xml --test-level RunLocalTests` |
-
-## Project structure
-
-```
-force-app/main/default/
-├── classes/                OpportunityProductController, ProductHealthGrounding,
-│                           ProductHealthAIController and their test classes
-├── lwc/opportunityProductCorrector/   UI, styles and Jest tests
-├── objects/                Product_Correction_Log__c and its fields,
-│                           OpportunityLineItem validation rules
-├── genAiPromptTemplates/   Opportunity_Product_Health_Review
-├── permissionsets/         Product_Correction_Access
-└── tabs/                   Product Correction Log tab
-manifest/package.xml        Everything to deploy
-scripts/apex/seed.apex      Demo data
-```
-
-## Next steps
-
-- Record-triggered Flow: create a review Task for the Opportunity owner when a discount above 20% is saved.
-- Report and dashboard on corrections by field and by user.
+- `classes/`: the correction logic, the AI pricing rules, the AI controller, and their tests
+- `lwc/opportunityProductCorrector/`: the component and its Jest tests
+- `objects/`: the correction log object and the validation rules
+- `genAiPromptTemplates/`: the AI review prompt
+- `scripts/apex/seed.apex`: demo data (an IoT/eSIM opportunity)
