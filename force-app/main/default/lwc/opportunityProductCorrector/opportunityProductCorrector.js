@@ -4,6 +4,7 @@ import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { notifyRecordUpdateAvailable } from "lightning/uiRecordApi";
 import getLineItems from "@salesforce/apex/OpportunityProductController.getLineItems";
 import saveCorrections from "@salesforce/apex/OpportunityProductController.saveCorrections";
+import reviewProducts from "@salesforce/apex/ProductHealthAIController.reviewProducts";
 
 // Discount is shown as a plain number because Apex returns 15 for 15%,
 // while the datatable "percent" type expects 0.15.
@@ -56,6 +57,8 @@ export default class OpportunityProductCorrector extends LightningElement {
   reason = "";
   error;
   isSaving = false;
+  isReviewing = false;
+  aiReview;
   wiredLineItems;
 
   @wire(getLineItems, { opportunityId: "$recordId" })
@@ -109,13 +112,31 @@ export default class OpportunityProductCorrector extends LightningElement {
       );
       this.draftValues = [];
       this.reason = "";
+      // An earlier AI review no longer matches the saved prices.
+      this.aiReview = undefined;
       await refreshApex(this.wiredLineItems);
-      // Lets the Opportunity Amount and related lists on the page refresh too.
-      await notifyRecordUpdateAvailable([{ recordId: this.recordId }]);
+      // Refresh the Opportunity (Amount) and each changed product line,
+      // so the standard Products related list shows the new values too.
+      await notifyRecordUpdateAvailable([
+        { recordId: this.recordId },
+        ...drafts.map((draft) => ({ recordId: draft.Id }))
+      ]);
     } catch (error) {
       this.toast("Could not save corrections", reduceError(error), "error");
     } finally {
       this.isSaving = false;
+    }
+  }
+
+  async handleAiReview() {
+    this.isReviewing = true;
+    this.aiReview = undefined;
+    try {
+      this.aiReview = await reviewProducts({ opportunityId: this.recordId });
+    } catch (error) {
+      this.toast("AI review failed", reduceError(error), "error");
+    } finally {
+      this.isReviewing = false;
     }
   }
 

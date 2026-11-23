@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenAiPromptTemplate xmlns="http://soap.sforce.com/2006/04/metadata">
+    <activeVersionIdentifier>BWkenRQtFTFsiDzBp5pzqh6xJ0qP5+GmT7Bpi/ChDHw=_2</activeVersionIdentifier>
+    <developerName>Opportunity_Product_Health_Review</developerName>
+    <masterLabel>Opportunity Product Health Review</masterLabel>
+    <description>Reviews the products on an Opportunity for pricing and discount problems and recommends corrections.</description>
+    <templateVersions>
+        <content>You are a Sales Operations analyst reviewing the products on a sales opportunity before it goes into the forecast.
+
+Here are the opportunity and its products. Each product lists flags that were calculated by pricing rules:
+{!$Apex:ProductHealthGrounding.Prompt}
+
+Write a short review for the sales rep:
+1. Start with one sentence on the overall health of the product lines.
+2. List each flagged product as a bullet: what the problem is, why it matters for revenue or approval, and one concrete correction (for example, a sales price or discount to check).
+3. If no product is flagged, say the product lines look consistent and stop.
+
+Rules: only use the numbers given above, never invent prices or percentages. Don&apos;t mention products that have no flags. Keep it under 120 words. Use plain text with &quot;-&quot; bullets.
+</content>
+        <inputs>
+            <apiName>myOpportunity</apiName>
+            <definition>SOBJECT://Opportunity</definition>
+            <masterLabel>Opportunity</masterLabel>
+            <referenceName>Input:myOpportunity</referenceName>
+            <required>true</required>
+        </inputs>
+        <isCitationEnabled>false</isCitationEnabled>
+        <primaryModel>sfdc_ai__DefaultGPT41Mini</primaryModel>
+        <status>Published</status>
+        <templateDataProviders>
+            <definition>apex://ProductHealthGrounding</definition>
+            <parameters>
+                <definition>SOBJECT://Opportunity</definition>
+                <isRequired>true</isRequired>
+                <parameterName>myOpportunity</parameterName>
+                <valueExpression>{!$Input:myOpportunity}</valueExpression>
+            </parameters>
+            <referenceName>Apex:ProductHealthGrounding</referenceName>
+        </templateDataProviders>
+        <versionIdentifier>BWkenRQtFTFsiDzBp5pzqh6xJ0qP5+GmT7Bpi/ChDHw=_2</versionIdentifier>
+    </templateVersions>
+    <type>einstein_gpt__flex</type>
+    <visibility>Global</visibility>
+</GenAiPromptTemplate>

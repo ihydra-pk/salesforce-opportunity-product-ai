@@ -1,0 +1,4 @@
+/* Keep the line breaks and bullets the AI returns. */
+.ai-review-text {
+  white-space: pre-line;
+}

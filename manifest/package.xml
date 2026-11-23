@@ -3,6 +3,9 @@
     <types>
         <members>OpportunityProductController</members>
         <members>OpportunityProductControllerTest</members>
+        <members>ProductHealthAIController</members>
+        <members>ProductHealthGrounding</members>
+        <members>ProductHealthTest</members>
         <name>ApexClass</name>
     </types>
     <types>
@@ -12,6 +15,10 @@
     <types>
         <members>Product_Correction_Log__c</members>
         <name>CustomTab</name>
+    </types>
+    <types>
+        <members>Opportunity_Product_Health_Review</members>
+        <name>GenAiPromptTemplate</name>
     </types>
     <types>
         <members>opportunityProductCorrector</members>
@@ -26,5 +33,5 @@
         <members>OpportunityLineItem.Quantity_Must_Be_Positive</members>
         <name>ValidationRule</name>
     </types>
-    <version>62.0</version>
+    <version>66.0</version>
 </Package>

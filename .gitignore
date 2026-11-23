@@ -46,3 +46,6 @@ $RECYCLE.BIN/
 
 # Personal documents
 *.pdf
+
+# Editor settings
+.vscode/
