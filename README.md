@@ -26,7 +26,7 @@ So I built a small tool for it. It sits on the Opportunity page, lets you correc
 
 This is what it said about my demo opportunity after I raised the eSIM price to $22 (list price $12):
 
-> eSIM Connectivity Plan (ESIM-01): The sales price is 83% above the list price, which could lead to approval delays and revenue recognition issues. Please verify the sales price or consider applying a discount to align more closely with the list price.
+![AI product health review](docs/images/05-ai-review.png)
 
 **Security.** All queries and saves run in user mode, so the tool only shows and changes what the user is allowed to. Access comes from one permission set.
 
